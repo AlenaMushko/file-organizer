@@ -7,6 +7,7 @@ import {
 import { isHelpFlag, renderGlobalHelp } from './src/utils/cli.js';
 import { runCommand } from './src/utils/errors.js';
 import { runScan } from './src/commands/scan.js';
+import { runDuplicates } from './src/commands/duplicates.js';
 
 function printHelp(exitCode = 0) {
   console.log(renderGlobalHelp());
@@ -44,7 +45,7 @@ await runCommand(async () => {
       break;
     }
     case COMMAND_NAMES.DUPLICATES: {
-      console.log('DUPLICATES');
+      await runDuplicates(folderPath);
       break;
     }
     case COMMAND_NAMES.ORGANIZE: {

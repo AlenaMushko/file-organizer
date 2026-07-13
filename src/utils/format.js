@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { SIZE_UNITS } from '../constants/format.js';
 
 export function formatSize(bytes) {
@@ -22,4 +24,12 @@ export function drawProgressBar(current, total, width = 20) {
   const bar = '█'.repeat(filled) + '░'.repeat(width - filled);
 
   return `${bar} ${current}/${total} files`;
+}
+
+export function formatDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+export function formatRelativePath(baseDirectory, filePath) {
+  return path.relative(baseDirectory, filePath);
 }

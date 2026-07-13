@@ -2,14 +2,18 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { EventEmitter } from 'node:events';
 
-import { createFsError } from '../utils/errors.js';
+import {
+  forEachFile,
+  getFileAgeInDays,
+  prepareDirectoryScan,
+} from '../utils/fs.js';
 
 export class Scanner extends EventEmitter {
   async scan(directory) {
-    const targetDirectory = path.resolve(directory);
-    await this.validateDirectory(targetDirectory);
-
-    const files = await this.collectFiles(targetDirectory);
+    const { targetDirectory, files } = await prepareDirectoryScan(
+      directory,
+      (data) => this.emit('file-error', data)
+    );
     const stats = this.createEmptyStats(targetDirectory);
 
     this.emit('scan-start', {
@@ -17,17 +21,17 @@ export class Scanner extends EventEmitter {
       totalFiles: files.length,
     });
 
-    for (const filePath of files) {
-      try {
+    await forEachFile(
+      files,
+      async (filePath) => {
         const fileStats = await fs.stat(filePath);
         const fileData = this.createFileData(filePath, fileStats);
 
         this.updateStats(stats, fileData);
         this.emit('file-found', fileData);
-      } catch (error) {
-        this.emit('file-error', { path: filePath, error });
-      }
-    }
+      },
+      (data) => this.emit('file-error', data)
+    );
 
     stats.largestFiles.sort((a, b) => b.size - a.size);
     stats.largestFiles = stats.largestFiles.slice(0, 3);
@@ -35,43 +39,6 @@ export class Scanner extends EventEmitter {
 
     this.emit('scan-complete', stats);
     return stats;
-  }
-
-  async validateDirectory(directory) {
-    const stats = await fs.stat(directory);
-
-    if (!stats.isDirectory()) {
-      throw createFsError('ENOTDIR', directory);
-    }
-  }
-
-  async collectFiles(directory) {
-    const files = [];
-
-    await this.walkDirectory(directory, files);
-
-    return files;
-  }
-
-  async walkDirectory(directory, files) {
-    let entries;
-
-    try {
-      entries = await fs.readdir(directory, { withFileTypes: true });
-    } catch (error) {
-      this.emit('file-error', { path: directory, error });
-      return;
-    }
-
-    for (const entry of entries) {
-      const fullPath = path.join(directory, entry.name);
-
-      if (entry.isDirectory()) {
-        await this.walkDirectory(fullPath, files);
-      } else if (entry.isFile()) {
-        files.push(fullPath);
-      }
-    }
   }
 
   createEmptyStats(directory) {
@@ -91,9 +58,7 @@ export class Scanner extends EventEmitter {
   }
 
   createFileData(filePath, fileStats) {
-    const daysOld = Math.floor(
-      (Date.now() - fileStats.mtime.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const daysOld = getFileAgeInDays(fileStats.mtime);
 
     return {
       path: filePath,

@@ -1,3 +1,4 @@
+import { REPORT_SEPARATOR } from '../constants/format.js';
 import { formatSize } from '../utils/format.js';
 import { pluralizeFile } from '../utils/pluralize.js';
 
@@ -9,7 +10,7 @@ export function renderScanResults(stats) {
   const lines = [
     '',
     '📊 Scan Results:',
-    '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+    REPORT_SEPARATOR,
     `Total files: ${stats.totalFiles}`,
     `Total size: ${formatSize(stats.totalSize)}`,
     '',
