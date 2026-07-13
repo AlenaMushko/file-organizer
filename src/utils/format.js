@@ -1,14 +1,15 @@
+import { SIZE_UNITS } from '../constants/format.js';
+
 export function formatSize(bytes) {
   if (bytes === 0) return '0 B';
 
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   const unitIndex = Math.min(
     Math.floor(Math.log(bytes) / Math.log(1024)),
-    units.length - 1
+    SIZE_UNITS.length - 1
   );
   const value = bytes / 1024 ** unitIndex;
 
-  return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+  return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${SIZE_UNITS[unitIndex]}`;
 }
 
 export function drawProgressBar(current, total, width = 20) {

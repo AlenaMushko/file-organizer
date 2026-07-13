@@ -1,12 +1,9 @@
 import { formatSize } from '../utils/format.js';
-
-function pluralizeFile(count) {
-  return count === 1 ? 'file' : 'files';
-}
+import { pluralizeFile } from '../utils/pluralize.js';
 
 export function renderScanResults(stats) {
   const extensions = Object.entries(stats.extensions).sort(
-    ([, first], [, second]) => second.totalSize - first.totalSize
+    ([, first], [, second]) => second.count - first.count
   );
 
   const lines = [

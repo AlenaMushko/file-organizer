@@ -1,13 +1,15 @@
-import fs from 'fs/promises';
-import path from 'path';
-import { EventEmitter } from 'events';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { EventEmitter } from 'node:events';
+
+import { createFsError } from '../utils/errors.js';
 
 export class Scanner extends EventEmitter {
   async scan(directory) {
     const targetDirectory = path.resolve(directory);
     await this.validateDirectory(targetDirectory);
 
-    const files = await this.getAllFiles(targetDirectory);
+    const files = await this.collectFiles(targetDirectory);
     const stats = this.createEmptyStats(targetDirectory);
 
     this.emit('scan-start', {
@@ -37,25 +39,39 @@ export class Scanner extends EventEmitter {
 
   async validateDirectory(directory) {
     const stats = await fs.stat(directory);
+
     if (!stats.isDirectory()) {
-      throw new Error(`Path is not a directory: ${directory}`);
+      throw createFsError('ENOTDIR', directory);
     }
   }
 
-  async getAllFiles(directory, fileList = []) {
-    const entries = await fs.readdir(directory, { withFileTypes: true });
+  async collectFiles(directory) {
+    const files = [];
+
+    await this.walkDirectory(directory, files);
+
+    return files;
+  }
+
+  async walkDirectory(directory, files) {
+    let entries;
+
+    try {
+      entries = await fs.readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      this.emit('file-error', { path: directory, error });
+      return;
+    }
 
     for (const entry of entries) {
       const fullPath = path.join(directory, entry.name);
 
       if (entry.isDirectory()) {
-        await this.getAllFiles(fullPath, fileList);
+        await this.walkDirectory(fullPath, files);
       } else if (entry.isFile()) {
-        fileList.push(fullPath);
+        files.push(fullPath);
       }
     }
-
-    return fileList;
   }
 
   createEmptyStats(directory) {
