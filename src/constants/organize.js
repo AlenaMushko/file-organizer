@@ -7,6 +7,15 @@ export const CATEGORY_NAMES = Object.freeze({
   OTHER: 'Other',
 });
 
+export const ORGANIZE_CATEGORY_ORDER = Object.freeze([
+  CATEGORY_NAMES.DOCUMENTS,
+  CATEGORY_NAMES.IMAGES,
+  CATEGORY_NAMES.ARCHIVES,
+  CATEGORY_NAMES.CODE,
+  CATEGORY_NAMES.VIDEOS,
+  CATEGORY_NAMES.OTHER,
+]);
+
 export const CATEGORIES = Object.freeze({
   [CATEGORY_NAMES.DOCUMENTS]: Object.freeze([
     '.pdf',

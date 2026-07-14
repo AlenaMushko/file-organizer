@@ -8,6 +8,8 @@ import { isHelpFlag, renderGlobalHelp } from './src/utils/cli.js';
 import { runCommand } from './src/utils/errors.js';
 import { runScan } from './src/commands/scan.js';
 import { runDuplicates } from './src/commands/duplicates.js';
+import { runOrganize } from './src/commands/organize.js';
+import { runCleanup } from './src/commands/cleanup.js';
 
 function printHelp(exitCode = 0) {
   console.log(renderGlobalHelp());
@@ -49,11 +51,32 @@ await runCommand(async () => {
       break;
     }
     case COMMAND_NAMES.ORGANIZE: {
-      console.log('ORGANIZE');
+      const outputIndex = argv.indexOf('--output');
+      const outputPath = outputIndex !== -1 ? argv[outputIndex + 1] : null;
+
+      if (!outputPath) {
+        console.error('❌ organize command requires --output <target-directory>');
+        printHelp(1);
+      }
+
+      await runOrganize(folderPath, outputPath);
       break;
     }
     case COMMAND_NAMES.CLEANUP: {
-      console.log('CLEANUP');
+      const olderThanIndex = argv.indexOf('--older-than');
+      const olderThanValue =
+        olderThanIndex !== -1 ? Number(argv[olderThanIndex + 1]) : null;
+      const confirm = argv.includes('--confirm');
+
+      if (!olderThanValue || Number.isNaN(olderThanValue)) {
+        console.error('❌ cleanup command requires --older-than <days>');
+        printHelp(1);
+      }
+
+      await runCleanup(folderPath, {
+        olderThan: olderThanValue,
+        confirm,
+      });
       break;
     }
     default: {
